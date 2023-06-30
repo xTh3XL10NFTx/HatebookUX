@@ -1,0 +1,145 @@
+/* Please see documentation at https://docs.microsoft.com/aspnet/core/client-side/bundling-and-minification
+for details on configuring this project to bundle and minify static web assets. */
+
+a.navbar-brand[b-2g5wrxgz01] {
+  white-space: normal;
+  text-align: center;
+  word-break: break-all;
+}
+
+a[b-2g5wrxgz01] {
+  color: #0077cc;
+}
+
+.btn-primary[b-2g5wrxgz01] {
+  color: #fff;
+  background-color: #1b6ec2;
+  border-color: #1861ac;
+}
+
+.nav-pills .nav-link.active[b-2g5wrxgz01], .nav-pills .show > .nav-link[b-2g5wrxgz01] {
+  color: #fff;
+  background-color: #1b6ec2;
+  border-color: #1861ac;
+}
+
+.border-top[b-2g5wrxgz01] {
+  border-top: 1px solid #e5e5e5;
+}
+.border-bottom[b-2g5wrxgz01] {
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.box-shadow[b-2g5wrxgz01] {
+  box-shadow: 0 .25rem .75rem rgba(0, 0, 0, .05);
+}
+
+button.accept-policy[b-2g5wrxgz01] {
+  font-size: 1rem;
+  line-height: inherit;
+}
+
+.footer[b-2g5wrxgz01] {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  white-space: nowrap;
+  line-height: 60px;
+}
+
+.or-text[b-2g5wrxgz01] {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 6px;
+}
+
+.profile-wrapper[b-2g5wrxgz01] {
+    position: relative;
+    display: inline-block;
+}
+
+.profile-picture-wrapper[b-2g5wrxgz01] {
+    position: relative;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+}
+
+.profile-picture[b-2g5wrxgz01] {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-right: -50px;
+    transition: margin-right 0.3s ease;
+}
+
+.account-text[b-2g5wrxgz01] {
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.dropdown-menu[b-2g5wrxgz01] {
+    position: absolute;
+    top: 100%;
+    z-index: 1;
+    display: none;
+    min-width: 160px;
+    font-size: 1rem;
+    color: #212529;
+    text-align: left;
+    background-color: var(--bs-dark);
+    background-clip: padding-box;
+    border: 1px solid rgba(0, 0, 0, .15);
+    border-radius: .25rem;
+    white-space: nowrap;
+    right: auto;
+}
+
+    .dropdown-menu.show[b-2g5wrxgz01] {
+        display: block;
+    }
+
+.dropdown-item[b-2g5wrxgz01] {
+    padding: .25rem 1.5rem;
+    clear: both;
+    font-weight: 400;
+    color: #212529;
+    text-align: inherit;
+    white-space: nowrap;
+    background-color: transparent;
+    border: 0;
+}
+
+    .dropdown-item:hover[b-2g5wrxgz01],
+    .dropdown-item:focus[b-2g5wrxgz01] {
+        color: #fff;
+        background-color: #1b6ec2;
+    }
+
+.dropdown-divider[b-2g5wrxgz01] {
+    height: 0;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    border-top: 1px solid #e9ecef;
+}
+
+.profile-wrapper:hover .profile-picture-wrapper[b-2g5wrxgz01] {
+    transform: translateX(-10%); /* Move the image to the side */
+}
+
+.profile-wrapper:hover .profile-picture[b-2g5wrxgz01] {
+    margin-right: 10px; /* Adjust the margin to create space for the account text */
+}
+
+.profile-wrapper:hover .account-text[b-2g5wrxgz01] {
+    opacity: 1;
+}
+
+.profile-wrapper:hover .dropdown-menu[b-2g5wrxgz01] {
+    display: block;
+    right: 10px;
+}

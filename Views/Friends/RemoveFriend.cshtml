@@ -1,0 +1,41 @@
+﻿@model HatebookUX.Models.Friends
+
+@{
+    ViewData["Title"] = "RemoveFriend";
+
+    var successMessage = TempData["SuccessMessage"] as string;
+    var errorMessage = TempData["ErrorMessage"] as string;
+}
+
+@if (!string.IsNullOrEmpty(successMessage))
+{
+    <div class="alert alert-success">@successMessage</div>
+}
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <form action="/Friends/RemoveFriend" method="post" onsubmit="return confirm('Are you sure you want to remove this friend?');">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="form-group">
+                <label for="inputEmail" class="control-label">Email</label>
+                <input type="email" name="inputEmail" class="form-control" />
+            </div>
+
+            <div class="form-group">
+                <input type="submit" value="Remove" class="btn btn-danger" />
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

@@ -1,0 +1,161 @@
+﻿@using Microsoft.AspNetCore.Http
+@inject IHttpContextAccessor HttpContextAccessor
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - HatebookUX</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/HatebookUX.styles.css" asp-append-version="true" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/5.0.11/signalr.min.js"></script>
+    <script src="/js/chat-script.js"></script>
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-lg bg-dark" data-bs-theme="dark">
+            <div class="container-fluid">
+                <a class="navbar-brand text-secondary" href="#" style="font-weight: bold;">Hatebook</a>
+
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarColor02" aria-controls="navbarColor02" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarColor02">
+                    <ul class="navbar-nav me-auto">
+                        <li class="nav-item">
+                            <a class="nav-link .text-danger-emphasis" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link .text-danger-emphasis" asp-area="" asp-controller="UserAccount" asp-action="EditUser">My account</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link .text-danger-emphasis" asp-area="" asp-controller="UserAccount" asp-action="Users">People</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link .text-danger-emphasis" asp-area="" asp-controller="Home" asp-action="Contacts">About</a>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link .text-danger-emphasis dropdown-toggle " data-bs-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">Groups</a>
+                            <div class="dropdown-menu">
+                                <a class="dropdown-item .text-danger-emphasis" asp-area="" asp-controller="Group" asp-action="GetGroup"> Get</a>
+                                <a class="dropdown-item .text-danger-emphasis" asp-area="" asp-controller="Group" asp-action="CreateGroup"> Create </a>
+                                <a class="dropdown-item .text-danger-emphasis" asp-area="" asp-controller="Group" asp-action="EditGroup">  Edit</a>
+                            </div>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle .text-danger-emphasis" data-bs-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">Friends</a>
+                            <div class="dropdown-menu">
+                                <a class="dropdown-item nav-link .text-danger-emphasis" asp-area="" asp-controller="Friends" asp-action="GetFriends"> My friends</a>
+                                <a class="dropdown-item nav-link .text-danger-emphasis" asp-area="" asp-controller="Friends" asp-action="GetFriendRequests"> Friend requests</a>
+                                <a class="dropdown-item nav-link .text-danger-emphasis" asp-area="" asp-controller="Friends" asp-action="AddFriend"> Add a friend </a>
+                                <a class="dropdown-item nav-link .text-danger-emphasis" asp-area="" asp-controller="Friends" asp-action="RemoveFriend"> Remove a friend</a>
+                                <a class="dropdown-item nav-link .text-danger-emphasis" asp-area="" asp-controller="Friends" asp-action="AcceptFriendRequest">  Accept</a>
+                                <a class="dropdown-item nav-link .text-danger-emphasis" asp-area="" asp-controller="Friends" asp-action="DeclineFriendRequest">  Decline</a>
+                                <div class="dropdown-divider"></div>
+                                <a class="dropdown-item" href="#">Separated link</a>
+                            </div>
+                        </li>
+                    </ul>
+                    @if (User.Identity.IsAuthenticated)
+                    {
+                        var profilePicturePath = HttpContextAccessor.HttpContext.Session.GetString("ProfilePicture");
+                        <div class="welcome-message">
+                            <strong>Welcome, @User.Identity.Name!</strong>
+                        </div>
+                        <div> ‎ ‎ ‎ ‎ ‎ ‎ ‎ </div>
+                        <div class="profile-wrapper">
+                            <div class="profile-picture-wrapper">
+                                <img src="@profilePicturePath" alt="Profile Picture" class="profile-picture">
+                                <div class="account-text">Account</div>
+                            </div>
+                            <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                                <li><a class="dropdown-item text-light" asp-area="" asp-controller="UserAccount" asp-action="EditUser">My Account</a></li>
+                                <li><a class="dropdown-item text-light" onclick="confirmDeleteAccount()" asp-area="" asp-controller="UserAccount" asp-action="DeleteAccount">Delete Account</a></li>
+                                <li><a class="dropdown-item text-light" asp-area="" asp-controller="UserAccount" asp-action="Settings">Settings</a></li>
+                                <div class="dropdown-divider"></div>
+                                <form id="logoutForm" asp-area="" asp-controller="UserAccount" asp-action="Logout" method="post" class="d-inline">
+                                    <button class="dropdown-item text-danger" type="submit">Logout</button>
+                                </form>
+                            </ul>
+                        </div>
+
+                    }
+                    else
+                    {
+                        <ul class="navbar-nav ml-auto">
+                            <li class="nav-item">
+                                <a class="btn btn-light" asp-area="" asp-controller="UserAccount" asp-action="LogIn">Log in</a>
+                            </li>
+                            <li class="nav-item">
+                                <span class="or-text"> ‎ ‎ ‎ or ‎ ‎ ‎ </span>
+                            </li>
+                            <li class="nav-item">
+                                <a class="btn btn-light" asp-area="" asp-controller="UserAccount" asp-action="Register">Register</a>
+                            </li>
+                        </ul>
+                    }
+                </div>
+            </div>
+        </nav>
+    </header>
+    <div id="chat-container"></div>
+    <div class="container">
+        <main role="main" class="pb-3">
+            @RenderBody()
+        </main>
+    </div>
+
+    <footer class="border-top footer text-muted">
+        <div class="container">
+            &copy; 2023 - HatebookUX - <a asp-area="" asp-controller="Home" asp-action="Contacts">About</a>
+        </div>
+    </footer>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+
+    <script>
+        // Handle delete account button click event
+        function confirmDeleteAccount() {
+            var confirmation = confirm("Are you sure you want to delete your account?");
+            if (confirmation) {
+                // User confirmed, proceed with account deletion
+                window.location.href = "https://localhost:7288/api/Account/delete";
+            } else {
+                // User cancelled, do nothing
+            }
+        }
+        // Handle delete account button click event
+        function confirmDeleteAccount() {
+            var confirmation = confirm("Are you sure you want to delete your account?");
+            if (confirmation) {
+                // User confirmed, proceed with account deletion
+                window.location.href = "https://localhost:7288/api/Account/delete";
+            } else {
+                // User cancelled, do nothing
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadChatButton);
+
+        function loadChatButton() {
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', '/Shared/chat-button.html', true);
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
+                    var chatButtonHtml = xhr.responseText;
+                    console.log(chatButtonHtml); // Check the response in the browser console
+
+                    // Insert the chat button HTML content into the desired location on the page
+                    var chatContainer = document.getElementById('chat-container');
+                    chatContainer.innerHTML = chatButtonHtml;
+                }
+            };
+            xhr.send();
+        }
+    </script>
+</body>
+</html>

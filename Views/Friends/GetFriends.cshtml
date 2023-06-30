@@ -1,0 +1,60 @@
+﻿@model IEnumerable<Friends>
+
+<style>
+    .friend-container {
+        display: flex;
+        flex-direction: column; /* Set the flex direction to column */
+        padding: 10px;
+        border-bottom: 1px solid #ddd;
+    }
+
+        .friend-container:last-child {
+            border-bottom: none;
+        }
+
+    .friend-details {
+        margin-top: 20px; /* Adjust margin top instead of margin left */
+    }
+
+    .friend-name {
+        font-weight: bold;
+        font-size: 24px;
+        margin-bottom: 5px;
+    }
+</style>
+
+<div>
+    @if (Model != null && Model.Any())
+    {
+        @foreach (var friend in Model)
+        {
+            <div class="friend-container">
+                <div class="friend-details">
+                    @if (friend.sender != User.Identity.Name)
+                    {
+                        <div class="friend-container">
+                            <div class="friend-details">
+                                <div class="friend-name">@friend.sender</div>
+                                <!-- Add other friend details here -->
+                            </div>
+                        </div>
+                    }
+                    @if (friend.reciver != User.Identity.Name)
+                    {
+                        <div class="friend-container">
+                            <div class="friend-details">
+                                <div class="friend-name">@friend.reciver</div>
+                                <!-- Add other friend details here -->
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+        }
+    }
+    else
+    {
+        <p>No friends found.</p>
+    }
+</div>

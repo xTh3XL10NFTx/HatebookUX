@@ -1,0 +1,210 @@
+﻿@*<!-- Your other form fields -->
+<div id="otherFields">
+    <div class="row">
+        <div class="col-md-6 offset-md-3">
+            <form id="editForm" asp-action="EditUser">
+                <fieldset>
+                    <legend>Personal Information</legend>
+                    <div class="form-group">
+                        <div class="d-flex align-items-center">
+                            <div class="user-profile-picture">
+                                @if (!string.IsNullOrEmpty(Model.profilePicture))
+                                {
+                                    <img src="@Model.profilePicture" alt="Profile Picture" />
+                                }
+                                else
+                                {
+                                    <img src="@Model.DefaultProfilePicture" alt="Profile Picture" />
+                                }
+                            </div>
+                            <div class="email-info">
+                                <h4>@Model.email</h4>
+                                <hr class="custom-hr" />
+                                <div id="uploadProfilePic" style="display: none" class="url-file-buttons">
+                                    <div class="profile-picture-options">
+                                        <div class="profile-picture-option">
+                                            <input type="radio" class="btn-check" name="profilePictureOption" id="urlOption" autocomplete="off" disabled>
+                                            <label class="btn btn-outline-primary" for="urlOption">URL</label>
+                                        </div>
+                                        <div class="profile-picture-option">
+                                            <input type="radio" class="btn-check" name="profilePictureOption" id="fileOption" autocomplete="off" disabled>
+                                            <label class="btn btn-outline-primary" for="fileOption">File</label>
+                                        </div>
+                                    </div>
+
+                                    <div id="urlInput" style="display: none;">
+                                        <input type="text" asp-for="profilePicture" class="form-control profile-picture-input" />
+                                    </div>
+
+                                    <div id="fileInput" style="display: none;">
+                                        <input type="file" asp-for="profilePicture" class="form-control-file profile-picture-input" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Populate other fields with existing values -->
+                    <div class="form-group">
+                        <label asp-for="firstName" class="control-label">First Name</label>
+                        <input asp-for="firstName" class="form-control" placeholder="Enter your first name" value="@Model.firstName" disabled />
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="lastName" class="control-label">Last Name</label>
+                        <input asp-for="lastName" class="form-control" placeholder="Enter your last name" value="@Model.lastName" disabled />
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="birthday" class="control-label">Birthday</label>
+                        <input asp-for="birthday" class="form-control" placeholder="Enter your birthday" id="birthday" data-raw-value="@Model.birthday" disabled />
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="gender" class="control-label">Gender</label>
+                        <select asp-for="gender" class="form-control" disabled>
+                            @foreach (var thegenderType in Enum.GetValues(typeof(GenderType)).Cast<GenderType>())
+                            {
+                                if (thegenderType.ToString() == Model.gender.ToString())
+                                {
+                                    <option value="@thegenderType" selected>@thegenderType</option>
+                                }
+                                else
+                                {
+                                    <option value="@thegenderType">@thegenderType</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                </fieldset>
+                <div class="form-group mt-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <button type="submit" id="updateBtn" style="display:none" class="btn btn-success">Update</button>
+
+                        <!-- Stylish button for password verification -->
+                        <button id="verifyPasswordBtn" class="btn btn-danger">Edit</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const birthdayInput = document.getElementById('birthday');
+        const rawBirthday = birthdayInput.getAttribute('data-raw-value');
+        const parts = rawBirthday.split(' ')[0].split('.');
+        const year = parts[2];
+        const month = parts[1].padStart(2, '0');
+        const day = parts[0].padStart(2, '0');
+        const formattedBirthday = `${year}-${month}-${day} 00:00:00.0000000`;
+        birthdayInput.value = formattedBirthday;
+
+        const verifyPasswordBtn = document.getElementById('verifyPasswordBtn');
+        const passwordVerificationPopup = document.getElementById('passwordVerificationPopup');
+        const passwordVerificationInput = document.getElementById('passwordVerification');
+        const closeBtn = document.getElementById('closeBtn');
+        const verifyBtn = document.getElementById('verifyBtn');
+        const otherFields = document.getElementById('otherFields').querySelectorAll('input, select');
+        const updateBtn = document.getElementById('updateBtn');
+        const uploadProfilePic = document.getElementById('uploadProfilePic');
+        const editForm = document.getElementById('editForm');
+
+        // Handle verify password button click event
+        verifyPasswordBtn.addEventListener('click', function () {
+            passwordVerificationPopup.style.display = 'block';
+        });
+
+        // Handle verify button click event
+        verifyBtn.addEventListener('click', function () {
+            // Get the entered password
+            const enteredPassword = passwordVerificationInput.value;
+
+            // Send the request with the entered email and password
+            const email = document.getElementById('email').value;
+            const url = `/UserAccount/PasswordVerification?email=${encodeURIComponent(email)}&password=${encodeURIComponent(enteredPassword)}`;
+
+            // Make a GET request to the PasswordVerification endpoint
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    console.log('data:', data);
+                    console.log('enteredPassword:', enteredPassword);
+                    if (data.success && data.password === enteredPassword) {
+                        // If password is verified, enable other form fields
+                        otherFields.forEach(function (field) {
+                            field.removeAttribute('disabled');
+                        });
+                        updateBtn.style.display = 'block';
+                        uploadProfilePic.style.display = 'block';
+
+                        // Hide the password verification pop-up
+                        passwordVerificationPopup.style.display = 'none';
+                        verifyPasswordBtn.style.display = 'none';
+                    } else {
+                        // If password is incorrect, display an error message or take appropriate action
+                        alert('Incorrect password');
+                    }
+                })
+                .catch(error => {
+                    // Handle the HTTP request error, display an error message, or take appropriate action
+                    console.error('Error:', error);
+                });
+        });
+
+        const urlOption = document.getElementById('urlOption');
+        const fileOption = document.getElementById('fileOption');
+        const urlInput = document.getElementById('urlInput');
+        const fileInput = document.getElementById('fileInput');
+
+        // Handle radio button change event
+        urlOption.addEventListener('change', function () {
+            if (urlOption.checked) {
+                urlInput.style.display = 'block';
+                fileInput.style.display = 'none';
+            }
+        });
+
+        fileOption.addEventListener('change', function () {
+            if (fileOption.checked) {
+                fileInput.style.display = 'block';
+                urlInput.style.display = 'none';
+            }
+        });
+
+        // Handle close button click event
+        closeBtn.addEventListener('click', function () {
+            passwordVerificationPopup.style.display = 'none';
+        });
+
+        // Handle form submission event
+        editForm.addEventListener('submit', function (event) {
+            // Prevent the default form submission behavior
+            event.preventDefault();
+        });
+
+        updateBtn.addEventListener('submit', function (event) {
+            // Get the form data
+            const formData = new FormData(editForm);
+
+            // Make a POST request to the EditUser action with the form data
+            fetch('/UserAccount/EditUser', {
+                method: 'POST',
+                body: formData
+            })
+                .then(response => {
+                    if (response.ok) {
+                        // If the response is successful, display a success message and redirect to the homepage
+                        alert('Changes successful!');
+                        window.location.reload();
+                    } else {
+                        // If the response is not successful, display an error message or take appropriate action
+                        alert('Changes failed!');
+                    }
+                })
+                .catch(error => {
+                    // Handle the fetch request error, display an error message, or take appropriate action
+                    console.error('Error:', error);
+                });
+        });
+    });
+</script>"*@

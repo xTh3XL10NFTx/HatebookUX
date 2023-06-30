@@ -1,0 +1,63 @@
+﻿@model HatebookUX.Models.Friends
+
+@{
+    ViewData["Title"] = "AddFriend";
+
+    var successMessage = TempData["SuccessMessage"] as string;
+    var errorMessage = TempData["ErrorMessage"] as string;
+}
+
+@if (!string.IsNullOrEmpty(successMessage))
+{
+    <div class="alert alert-success">@successMessage</div>
+}
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+
+<h1>AddFriend</h1>
+
+<h4>Friends</h4>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="AddFriend">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="form-group">
+                <label asp-for="sender" class="control-label"></label>
+                <input asp-for="sender" class="form-control" />
+                <span asp-validation-for="sender" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="reciver" class="control-label"></label>
+                <input asp-for="reciver" class="form-control" />
+                <span asp-validation-for="reciver" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="status" class="control-label"></label>
+                <input asp-for="status" class="form-control" />
+                <span asp-validation-for="status" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="creatorId" class="control-label"></label>
+                <input asp-for="creatorId" class="form-control" />
+                <span asp-validation-for="creatorId" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <input type="submit" value="Create" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
+</div>
+
+<div>
+    <a asp-action="Index">Back to List</a>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

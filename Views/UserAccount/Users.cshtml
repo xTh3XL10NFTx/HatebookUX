@@ -1,0 +1,123 @@
+﻿@model HatebookUX.Models.UserFriendsViewModel
+
+<style>
+    .user-container {
+        display: flex;
+        align-items: center;
+        padding: 10px;
+        border-bottom: 1px solid #ddd;
+    }
+
+        .user-container:last-child {
+            border-bottom: none;
+        }
+
+    .user-profile-picture {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        overflow: hidden;
+    }
+
+        .user-profile-picture img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center;
+        }
+
+    .user-details {
+        margin-left: 20px;
+    }
+
+    .user-name {
+        font-weight: bold;
+        font-size: 18px;
+        margin-bottom: 5px;
+    }
+
+    .user-email {
+        color: #888;
+        margin-bottom: 5px;
+    }
+
+    .user-gender-birthday {
+        color: #888;
+    }
+</style>
+
+<div class="users-container">
+    @foreach (var row in Model.Users)
+    {
+        <div class="user-container">
+            <div class="user-profile-picture">
+                @if (!string.IsNullOrEmpty(row.ProfilePicture))
+                {
+                    <img src="@row.ProfilePicture" alt="Profile Picture" />
+                }
+                else
+                {
+                    <img src="https://1fid.com/wp-content/uploads/2022/06/no-profile-picture-13-1024x1024.jpg" alt="Profile Picture" />
+                }
+            </div>
+            <div class="user-details">
+                <div class="user-name">@row.FirstName @row.LastName</div>
+                <div class="user-email">@row.Email</div>
+                <div class="user-gender-birthday">@row.GenderType, @row.Birthday</div>
+                <div class="friend-status">@GetFriendStatus(row.Email)</div>
+                @if (@GetFriendStatus(row.Email) == "Accepted")
+                {
+                    <div class="friend-status">Friend</div>
+                }
+                else if (@GetFriendStatus(row.Email) == "Pending")
+                {
+                    <div class="friend-status">Friend Request Sent</div>
+                }
+                else if (@GetFriendStatus(row.Email) == null || @GetFriendStatus(row.Email) == "Declined")
+                {
+                    <div class="friend-status">
+                        <form action="/FriendsController/AcceptFriendRequest" method="post">
+                            <input type="hidden" name="inputEmail" value="@row.Email" />
+                            <button type="submit" class="btn btn-success">Accept</button>
+                        </form>
+                        <form action="/FriendsController/DeclineFriendRequest" method="post">
+                            <input type="hidden" name="inputEmail" value="@row.Email" />
+                            <button type="submit" class="btn btn-danger">Decline</button>
+                        </form>
+                    </div>
+                }
+                else
+                {
+                    <div class="friend-status">
+                        <form action="/FriendsController/AddFriend" method="post">
+                            <input type="hidden" name="inputEmail" value="@row.Email" />
+                            <button type="submit" class="btn btn-primary">Send Friend Request</button>
+                        </form>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+<script>
+    // Access user containers
+    const userContainers = document.querySelectorAll('.user-container');
+
+    // Iterate over user containers and log friend status
+    userContainers.forEach(container => {
+        const userEmail = container.querySelector('.user-email').textContent;
+        const friendStatus = container.querySelector('.friend-status').textContent;
+        console.log(`Friend: ${userEmail}`);
+        console.log(`Status: ${friendStatus}`);
+    });
+</script>
+
+@functions {
+    // Helper function to get the friend status for a given user email
+    string GetFriendStatus(string userEmail)
+    {
+        var rowFriendship = Model.Friends.FirstOrDefault(f => f.sender == userEmail || f.reciver == userEmail);
+        return rowFriendship?.status ?? "none";
+    }
+}
