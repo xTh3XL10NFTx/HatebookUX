@@ -1,4 +1,5 @@
-﻿using System.Net.Http.Headers;
+﻿using HatebookUX.Models;
+using System.Net.Http.Headers;
 
 namespace HatebookUX.Services
 {
@@ -20,52 +21,29 @@ namespace HatebookUX.Services
             return token;
         }
 
-        private HttpClient CreateHttpClient(string controllerType, string request)
+        public async Task<HttpResponseMessage> MakeRequestAsync(HttpMethod method, string controllerType, string request, object data = null)
         {
-            var client = _httpClientFactory.CreateClient();
-
-            // Set default request headers
-            client.DefaultRequestHeaders.Accept.Clear();
-            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-
-            var token = RetrieveAuthToken(_httpContextAccessor);
-            if (!string.IsNullOrEmpty(token))
+            var url = "https://localhost:7288/api/" + controllerType + "/" + request;
+            using (var client = new HttpClient())
             {
-                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-            }
+                var theRequest = new HttpRequestMessage(method, url);
 
-            client.BaseAddress = new Uri("https://localhost:7288/api/" + controllerType + "/" + request);
+                // Set default request headers
+                client.DefaultRequestHeaders.Accept.Clear();
+                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-            return client;
-        }
-
-        public async Task<HttpResponseMessage> MakeRequestAsync(string method, string controllerType, string request, object data = null)
-        {
-            using (var client = CreateHttpClient(controllerType, request))
-            {
-                HttpResponseMessage response;
-
-                switch (method.ToLower())
+                var token = RetrieveAuthToken(_httpContextAccessor);
+                if (!string.IsNullOrEmpty(token))
                 {
-                    case "get":
-                        response = await client.GetAsync(request);
-                        break;
-                    case "post":
-                        response = await client.PostAsJsonAsync(request, data);
-                        break;
-                    case "put":
-                        response = await client.PutAsJsonAsync(request, data);
-                        break;
-                    case "delete":
-                        response = await client.DeleteAsync(request);
-                        break;
-                    default:
-                        throw new ArgumentException("Invalid HTTP method.");
+                    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
                 }
+
+                client.BaseAddress = new Uri(url);
+
+                HttpResponseMessage response = await client.PostAsJsonAsync("request", data);
 
                 return response;
             }
         }
-
     }
 }
