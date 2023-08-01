@@ -26,6 +26,8 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddSignalR();
 
+builder.Services.MakeRequest();
+
 builder.Services.AddHttpClient();
 builder.Services.AddHttpContextAccessor();
 

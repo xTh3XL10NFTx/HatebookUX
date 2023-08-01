@@ -657,3 +657,5 @@ C:\Users\Ivelin T\source\repos\HatebookUX\bin\Debug\net6.0\System.Web.WebPages.D
 C:\Users\Ivelin T\source\repos\HatebookUX\bin\Debug\net6.0\System.Web.WebPages.Razor.dll
 C:\Users\Ivelin T\source\repos\HatebookUX\bin\Debug\net6.0\System.Web.WebPages.dll
 C:\Users\Ivelin T\source\repos\HatebookUX\bin\Debug\net6.0\Microsoft.Web.Infrastructure.dll
+C:\Users\Ivelin T\source\repos\HatebookUX\bin\Debug\net6.0\Polly.dll
+C:\Users\Ivelin T\source\repos\HatebookUX\bin\Debug\net6.0\Polly.Extensions.Http.dll

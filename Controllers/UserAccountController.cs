@@ -1,16 +1,15 @@
 ﻿using HatebookUX.Models;
+using HatebookUX.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Text;
-using System.Text.RegularExpressions;
 
 namespace HatebookUX.Controllers
 {
@@ -21,79 +20,74 @@ namespace HatebookUX.Controllers
         private readonly string _accountEndpoint;
         private readonly string _otherEndpoint;
         private readonly ILogger<UserAccountController> _logger;
+        private readonly ApiService _apiService;
 
-        public UserAccountController(IConfiguration configuration, ILogger<UserAccountController> logger)
+        public UserAccountController(IConfiguration configuration, ILogger<UserAccountController> logger, ApiService apiService)
         {
             _configuration = configuration;
             _baseUrl = _configuration["ApiEndpoints:BaseUrl"];
             _accountEndpoint = _configuration["ApiEndpoints:AccountEndpoint"];
             _otherEndpoint = _configuration["ApiEndpoints:OtherEndpoint"];
             _logger = logger;
+            _apiService = apiService;
         }
 
         public async Task<ActionResult<String>> LogIn(LogIn account)
         {
             if (account.email != null)
             {
-                using (var client = new HttpClient())
+                var response = await _apiService.MakeRequestAsync("post", "Account", "log-in", account);
+
+                if (response.IsSuccessStatusCode)
                 {
-                    client.BaseAddress = new Uri(_baseUrl + "api/Account/");
-                    client.DefaultRequestHeaders.Accept.Clear();
-                    client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-                    HttpResponseMessage getData = await client.PostAsJsonAsync<LogIn>("LogIn", account);
+                    var responseContent = await response.Content.ReadAsStringAsync();
+                    var token = JObject.Parse(responseContent)["token"].ToString();
 
-                    if (getData.IsSuccessStatusCode)
+                    // Store the user claims in session
+                    HttpContext.Session.SetString("AuthToken", token);
+
+                    // Get the user claims from the token
+                    var tokenHandler = new JwtSecurityTokenHandler();
+                    var parsedToken = tokenHandler.ReadJwtToken(token);
+                    var emailClaim = parsedToken.Claims.FirstOrDefault(c => c.Type == "email")?.Value;
+
+                    // Get the profile picture path from the user model
+                    var getUserDetails = await GetUserDetails(emailClaim);
+                    var profilePicturePath = getUserDetails.profilePicture;
+                    var defaultProfilePicturePath = getUserDetails.DefaultProfilePicture;
+
+                    HttpContext.Session.SetString("Email", emailClaim);
+                    if (profilePicturePath != null)
                     {
+                        HttpContext.Session.SetString("ProfilePicture", profilePicturePath);
+                    }
+                    else
+                    {
+                        HttpContext.Session.SetString("ProfilePicture", defaultProfilePicturePath);
+                    }
 
-                        var responseContent = await getData.Content.ReadAsStringAsync();
-                        var token = JObject.Parse(responseContent)["token"].ToString();
-
-                        // Store the user claims in session
-                        HttpContext.Session.SetString("AuthToken", token);
-
-                        // Get the user claims from the token
-                        var tokenHandler = new JwtSecurityTokenHandler();
-                        var parsedToken = tokenHandler.ReadJwtToken(token);
-                        var emailClaim = parsedToken.Claims.FirstOrDefault(c => c.Type == "email")?.Value;
-
-                        // Get the profile picture path from the user model
-                        var getUserDetails = await GetUserDetails(emailClaim);
-                        var profilePicturePath = getUserDetails.profilePicture;
-                        var defaultProfilePicturePath = getUserDetails.DefaultProfilePicture;
-
-                        HttpContext.Session.SetString("Email", emailClaim);
-                        if (profilePicturePath != null)
-                        {
-                            HttpContext.Session.SetString("ProfilePicture", profilePicturePath);
-                        }
-                        else
-                        {
-                            HttpContext.Session.SetString("ProfilePicture", defaultProfilePicturePath);
-                        }
-
-                        // Create the claims for the authenticated user
-                        var claims = new List<Claim>
+                    // Create the claims for the authenticated user
+                    var claims = new List<Claim>
                         {
                             new Claim(ClaimTypes.Name, emailClaim),
                             // Add additional claims if needed
                         };
 
-                        // Create the identity for the authenticated user
-                        var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+                    // Create the identity for the authenticated user
+                    var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
 
-                        // Sign in the user
-                        await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(identity));
+                    // Sign in the user
+                    await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(identity));
 
-                        ViewBag.Email = emailClaim;
+                    ViewBag.Email = emailClaim;
 
-                        TempData["SuccessMessage"] = "Login successful! Welcome.";
-                        return RedirectToAction("Index", "Home");
-                    }
-                    else
-                    {
-                        TempData["ErrorMessage"] = "Invalid email or password. Please try again.";
-                    }
+                    TempData["SuccessMessage"] = "Login successful! Welcome.";
+                    return RedirectToAction("Index", "Home");
+                }
+                else
+                {
+                    TempData["ErrorMessage"] = "Invalid email or password. Please try again.";
                 }
             }
 
@@ -103,10 +97,10 @@ namespace HatebookUX.Controllers
         {
             // Create a list of roles
             var roles = new List<Role>
-    {
-        new Role { Name = "User" },
-        new Role { Name = "Administrator" }
-    };
+            {
+                new Role { Name = "User" },
+                new Role { Name = "Administrator" }
+            };
 
             // Create a new Register model and assign the roles
             var registerModel = new Register
@@ -127,7 +121,6 @@ namespace HatebookUX.Controllers
             {
                 // Set the roles based on the selected role
                 registerRequest.Roles = new List<Role> { new Role { Name = registerRequest.SelectedRole } };
-
 
                 // Profile picture handling
                 if (registerRequest.ProfilePictureFile != null && registerRequest.ProfilePictureFile.Length > 0)
@@ -167,24 +160,19 @@ namespace HatebookUX.Controllers
                     ValidateFields(registerRequest);
                     return View(registerRequest);
                 }
-                using (var client = new HttpClient())
+
+                var response = await _apiService.MakeRequestAsync("post", "Account", "Register", registerRequest);
+
+
+                if (response.IsSuccessStatusCode)
                 {
-                    client.BaseAddress = new Uri(_baseUrl + "api/Account/");
-                    client.DefaultRequestHeaders.Accept.Clear();
-                    client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-
-                    HttpResponseMessage response = await client.PostAsJsonAsync("Register", registerRequest);
-
-                    if (response.IsSuccessStatusCode)
-                    {
-                        TempData["ErrorMessage"] = "";
-                        TempData["SuccessMessage"] = "Registration successful! You can now log in.";
-                        return RedirectToAction("Index", "Home");
-                    }
-                    else
-                    {
-                        TempData["ErrorMessage"] = "Failed to register. Please enter a valid email adderess.";
-                    }
+                    TempData["ErrorMessage"] = "";
+                    TempData["SuccessMessage"] = "Registration successful! You can now log in.";
+                    return RedirectToAction("Index", "Home");
+                }
+                else
+                {
+                    TempData["ErrorMessage"] = "Failed to register. Please enter a valid email adderess.";
                 }
             }
             return View(registerRequest);
@@ -257,52 +245,39 @@ namespace HatebookUX.Controllers
                 password = registerRequest.password
             };
 
-            using (var client = new HttpClient())
+            var response = await _apiService.MakeRequestAsync("put", "Account", "edit", registerRequest);
+
+            if (response.IsSuccessStatusCode)
             {
-                client.BaseAddress = new Uri(_baseUrl + "api/Account/");
-                client.DefaultRequestHeaders.Accept.Clear();
-                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-
-                // Retrieve the token from the HttpContext session
-                string token = HttpContext.Session.GetString("AuthToken");
-
-                // Add the bearer token to the request's Authorization header
-                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-                HttpResponseMessage response = await client.PutAsJsonAsync("edit", registerRequest);
-
-                if (response.IsSuccessStatusCode)
+                TempData["SuccessMessage"] = "Changes successful!";
+                return RedirectToAction("Index", "Home");
+            }
+            else
+            {
+                Register userDetails = await GetUserDetails(emailClaim.Value);
+                // Map the selected gender string to the corresponding GenderType enum value
+                if (userDetails.genderType == "0")
                 {
-                    TempData["SuccessMessage"] = "Changes successful!";
-                    return RedirectToAction("Index", "Home");
+                    userDetails.genderType = "Male";
+                    userDetails.gender = GenderType.Male;
+                }
+                else if (userDetails.genderType == "1")
+                {
+                    userDetails.genderType = "Female";
+                    userDetails.gender = GenderType.Female;
                 }
                 else
                 {
-                    Register userDetails = await GetUserDetails(emailClaim.Value);
-                    // Map the selected gender string to the corresponding GenderType enum value
-                    if (userDetails.genderType == "0")
-                    {
-                        userDetails.genderType = "Male";
-                        userDetails.gender = GenderType.Male;
-                    }
-                    else if (userDetails.genderType == "1")
-                    {
-                        userDetails.genderType = "Female";
-                        userDetails.gender = GenderType.Female;
-                    }
-                    else
-                    {
-                        userDetails.genderType = "Unknown";
-                        userDetails.gender = GenderType.Unknown;
-                    }
-                    if (userDetails != null)
-                    {
-                        return View(userDetails);
-                    }
-                    TempData["ErrorMessage"] = "Changes failed!";
-                    ModelState.AddModelError("passwordVerification", "Incorrect password");
-                    return View(registerRequest);
+                    userDetails.genderType = "Unknown";
+                    userDetails.gender = GenderType.Unknown;
                 }
+                if (userDetails != null)
+                {
+                    return View(userDetails);
+                }
+                TempData["ErrorMessage"] = "Changes failed!";
+                ModelState.AddModelError("passwordVerification", "Incorrect password");
+                return View(registerRequest);
             }
         }
 
@@ -310,6 +285,7 @@ namespace HatebookUX.Controllers
         {
             var viewModel = new UserFriendsViewModel();
             IList<UserEntity> user = new List<UserEntity>();
+
             using (var client = new HttpClient())
             {
                 // Retrieve users
@@ -339,111 +315,15 @@ namespace HatebookUX.Controllers
 
                 // Retrieve friends
                 IList<Friends> friends = new List<Friends>();
-                using (var clientFriendship = new HttpClient())
-                {
-                    clientFriendship.BaseAddress = new Uri(_baseUrl + "api/Friend/");
-                    clientFriendship.DefaultRequestHeaders.Accept.Clear();
-                    clientFriendship.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-                    // Add the bearer token to the request's Authorization header
-                    clientFriendship.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-                    HttpResponseMessage getDataFriendship = await clientFriendship.GetAsync("friends");
-
-                    if (getDataFriendship.IsSuccessStatusCode)
-                    {
-                        string results = getDataFriendship.Content.ReadAsStringAsync().Result;
-                        friends = JsonConvert.DeserializeObject<IList<Friends>>(results);
-                    }
-                    else
-                    {
-                        TempData["ErrorMessage"] = "Invalid email or password. Please try again.";
-                    }
-                }
-
-                viewModel.Friends = friends;
-
-
-                ViewData.Model = viewModel;
-            }
-
-            return View();
-        }
-
-        private async Task<Register> GetUserDetails(string email)
-        {
-            using (var client = new HttpClient())
-            {
-                // Set the base address and headers for the API request
-                client.BaseAddress = new Uri(_baseUrl + "api/Account/");
-                client.DefaultRequestHeaders.Accept.Clear();
-                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-
-                // Retrieve the token from the HttpContext session
-                string token = HttpContext.Session.GetString("AuthToken");
-
-                // Add the bearer token to the request's Authorization header
-                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-                // Send the GET request to retrieve the user details
-                HttpResponseMessage response = await client.GetAsync("get/" + email);
+                var response = await _apiService.MakeRequestAsync("get", "Account", "get", user);
 
                 if (response.IsSuccessStatusCode)
                 {
-                    // Deserialize the response content to get the user details
-                    Register userDetails = await response.Content.ReadAsAsync<Register>();
+                    string results = response.Content.ReadAsStringAsync().Result;
+                    friends = JsonConvert.DeserializeObject<IList<Friends>>(results);
 
-                    return userDetails;
-                }
-                else
-                {
-                    return null;
-                }
-            }
-        }
-
-
-        public async Task<ActionResult<PasswordVerificationResponse>> PasswordVerification(LogIn account)
-        {
-            using (var client = new HttpClient())
-            {
-                client.BaseAddress = new Uri(_baseUrl + "api/Account/");
-                client.DefaultRequestHeaders.Accept.Clear();
-                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-
-                HttpResponseMessage getData = await client.PostAsJsonAsync<LogIn>("LogIn", account);
-
-                if (getData.IsSuccessStatusCode)
-                {
-                    var responseContent = await getData.Content.ReadAsStringAsync();
-                    var token = JObject.Parse(responseContent)["token"].ToString();
-
-                    // Store the user claims in session
-                    HttpContext.Session.SetString("AuthToken", token);
-
-                    // Get the user claims from the token
-                    var tokenHandler = new JwtSecurityTokenHandler();
-                    var parsedToken = tokenHandler.ReadJwtToken(token);
-                    var emailClaim = parsedToken.Claims.FirstOrDefault(c => c.Type == "email")?.Value;
-
-                    HttpContext.Session.SetString("Email", emailClaim);
-
-                    // Create the claims for the authenticated user
-                    var claims = new List<Claim>
-                {
-                    new Claim(ClaimTypes.Name, emailClaim),
-                    // Add additional claims if needed
-                };
-
-                    // Create the identity for the authenticated user
-                    var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-
-                    // Sign in the user
-                    await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(identity));
-
-                    ViewBag.Email = emailClaim;
-
-                    return new PasswordVerificationResponse { Success = true, Password = account.password };
+                    viewModel.Friends = friends;
                 }
                 else
                 {
@@ -451,7 +331,73 @@ namespace HatebookUX.Controllers
                 }
             }
 
-            return new PasswordVerificationResponse { Success = false, Password = account.password };
+            ViewData.Model = viewModel;
+            return View();
+        }
+
+        private async Task<Register?> GetUserDetails(string email)
+        {
+            var response = await _apiService.MakeRequestAsync("get", "Account", "get/" + email);
+
+            if (response.IsSuccessStatusCode)
+            {
+                // Deserialize the response content to get the user details
+                Register userDetails = await response.Content.ReadAsAsync<Register>();
+
+                return userDetails;
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        public async Task<ActionResult<PasswordVerificationResponse>> PasswordVerification(LogIn account)
+        {
+            var response = await _apiService.MakeRequestAsync("post", "Account", "log-in", account);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var responseContent = await response.Content.ReadAsStringAsync();
+                var token = JObject.Parse(responseContent)["token"].ToString();
+
+                // Store the user claims in session
+                HttpContext.Session.SetString("AuthToken", token);
+
+                // Get the user claims from the token
+                var tokenHandler = new JwtSecurityTokenHandler();
+                var parsedToken = tokenHandler.ReadJwtToken(token);
+                var emailClaim = parsedToken.Claims.FirstOrDefault(c => c.Type == "email")?.Value;
+
+                HttpContext.Session.SetString("Email", emailClaim);
+
+                // Create the claims for the authenticated user
+                var claims = new List<Claim>
+                {
+                    new Claim(ClaimTypes.Name, emailClaim),
+                    // Add additional claims if needed
+                };
+
+                // Create the identity for the authenticated user
+                var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+
+                // Sign in the user
+                await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(identity));
+
+                ViewBag.Email = emailClaim;
+
+                return new PasswordVerificationResponse { Success = true, Password = account.password };
+            }
+            else
+            {
+                TempData["ErrorMessage"] = "Invalid email or password. Please try again.";
+            }
+
+            return new PasswordVerificationResponse
+            {
+                Success = false,
+                Password = account.password
+            };
         }
 
         public class PasswordVerificationResponse
@@ -475,39 +421,27 @@ namespace HatebookUX.Controllers
             // Get the ClaimsPrincipal object representing the current user
             ClaimsPrincipal currentUser = HttpContext.User;
             // Retrieve the email claim
-            Claim emailClaim = currentUser.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name");
+            var emailClaim = currentUser.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name");
+
             if (emailClaim != null)
             {
-                using (var client = new HttpClient())
+                var response = await _apiService.MakeRequestAsync("delete", "Account", "delete");
+
+                if (response.IsSuccessStatusCode)
                 {
-                    client.BaseAddress = new Uri(_baseUrl + "api/Account/");
-                    client.DefaultRequestHeaders.Accept.Clear();
-                    client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+                    TempData["ErrorMessage"] = "Account deletion successful!";
 
-                    // Retrieve the token from the HttpContext session
-                    string token = HttpContext.Session.GetString("AuthToken");
+                    Logout();
 
-                    // Add the bearer token to the request's Authorization header
-                    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-                    HttpResponseMessage getData = await client.DeleteAsync("delete");
-
-                    if (getData.IsSuccessStatusCode)
-                    {
-                        TempData["ErrorMessage"] = "Account deletion successful!";
-
-                        Logout();
-
-                        return RedirectToAction("Index", "Home");
-                    }
-                    else
-                    {
-                        TempData["ErrorMessage"] = "Deletion unsuccessfull.";
-                    }
+                    return RedirectToAction("Index", "Home");
+                }
+                else
+                {
+                    TempData["ErrorMessage"] = "Deletion unsuccessfull.";
                 }
             }
+            else TempData["ErrorMessage"] = "No assotiated account.";
 
-            TempData["ErrorMessage"] = "No assotiated account.";
             return RedirectToAction("Index", "Home");
         }
 

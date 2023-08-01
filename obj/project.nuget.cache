@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "N4LFUWwrM1GDvFllqetHNguia0nxvQSTba7WEHpIIXcwmZJiqJ+PmOmFDeMCiPv+GFuxpXgaZS4w8UxQMTwAXA==",
+  "dgSpecHash": "sKtR9qJ4BqzzIzyjIyfMnAiulAINV7fyxf3FNj9GGhZwhNjrYQwnMr5z2v80cG1UaOAUlYkNPLYs9fVTUivAfA==",
   "success": true,
   "projectFilePath": "C:\\Users\\Ivelin T\\source\\repos\\HatebookUX\\HatebookUX.csproj",
   "expectedPackageFiles": [
@@ -109,6 +109,8 @@
     "C:\\Users\\Ivelin T\\.nuget\\packages\\nuget.projectmodel\\6.3.1\\nuget.projectmodel.6.3.1.nupkg.sha512",
     "C:\\Users\\Ivelin T\\.nuget\\packages\\nuget.protocol\\6.3.1\\nuget.protocol.6.3.1.nupkg.sha512",
     "C:\\Users\\Ivelin T\\.nuget\\packages\\nuget.versioning\\6.3.1\\nuget.versioning.6.3.1.nupkg.sha512",
+    "C:\\Users\\Ivelin T\\.nuget\\packages\\polly\\7.2.4\\polly.7.2.4.nupkg.sha512",
+    "C:\\Users\\Ivelin T\\.nuget\\packages\\polly.extensions.http\\3.0.0\\polly.extensions.http.3.0.0.nupkg.sha512",
     "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder\\runtime.debian.8-x64.runtime.native.system.security.cryptography.openssl\\4.3.0\\runtime.debian.8-x64.runtime.native.system.security.cryptography.openssl.4.3.0.nupkg.sha512",
     "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder\\runtime.fedora.23-x64.runtime.native.system.security.cryptography.openssl\\4.3.0\\runtime.fedora.23-x64.runtime.native.system.security.cryptography.openssl.4.3.0.nupkg.sha512",
     "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder\\runtime.fedora.24-x64.runtime.native.system.security.cryptography.openssl\\4.3.0\\runtime.fedora.24-x64.runtime.native.system.security.cryptography.openssl.4.3.0.nupkg.sha512",

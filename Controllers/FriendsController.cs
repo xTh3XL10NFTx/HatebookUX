@@ -106,7 +106,6 @@ namespace HatebookUX.Controllers
             }
 
             return View();
-
         }
 
         public async Task<IActionResult> AddFriend(Friends friend)
